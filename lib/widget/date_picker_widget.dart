@@ -21,6 +21,7 @@ class DatePickerWidget extends StatefulWidget {
     this.dateFormat = DATETIME_PICKER_DATE_FORMAT,
     this.locale = DATETIME_PICKER_LOCALE_DEFAULT,
     this.pickerTheme = DateTimePickerTheme.Default,
+    this.activeItemTextStyle,
     this.onCancel,
     this.onChange,
     this.onConfirm,
@@ -35,6 +36,7 @@ class DatePickerWidget extends StatefulWidget {
   final String? dateFormat;
   final DateTimePickerLocale? locale;
   final DateTimePickerTheme? pickerTheme;
+  final TextStyle? activeItemTextStyle;
 
   final DateVoidCallback? onCancel;
   final DateValueCallback? onChange, onConfirm;
@@ -179,7 +181,10 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
             }
           },
           fontSize: widget.pickerTheme!.itemTextStyle.fontSize ??
-              sizeByFormat(widget.dateFormat!));
+              sizeByFormat(widget.dateFormat!),
+          isYear: format.contains('y'),
+          isMonth: format.contains('M'),
+          isDay: format.contains('d'));
       pickers.add(pickerColumn);
     });
     return Row(
@@ -208,7 +213,11 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
       required List<int> valueRange,
       required String format,
       required ValueChanged<int> valueChanged,
-      double? fontSize}) {
+      double? fontSize,
+      required bool isYear,
+      required bool isMonth,
+      required bool isDay,
+      }) {
     return Expanded(
       flex: 1,
       child: Stack(
@@ -237,6 +246,9 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
                       valueRange.first + index,
                       format,
                       fontSize,
+                      isYear: isYear,
+                      isMonth: isMonth,
+                      isDay: isDay,
                     );
                   },
                 ),
@@ -274,8 +286,28 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
   }
 
   Widget _renderDatePickerItemComponent(
-      int value, String format, double? fontSize) {
+    int value,
+    String format,
+    double? fontSize, {
+    required bool isYear,
+    required bool isMonth,
+    required bool isDay,
+  }) {
     var weekday = DateTime(_currYear!, _currMonth!, value).weekday;
+
+    bool isSelected = false;
+    if (isYear && value == _currYear) {
+      isSelected = true;
+    } else if (isMonth && value == _currMonth) {
+      isSelected = true;
+    } else if (isDay && value == _currDay) {
+      isSelected = true;
+    }
+
+    TextStyle textStyle = widget.pickerTheme?.itemTextStyle ?? DATETIME_PICKER_ITEM_TEXT_STYLE;
+    if (isSelected && widget.activeItemTextStyle != null) {
+      textStyle = widget.activeItemTextStyle!;
+    }
 
     return Container(
       height: widget.pickerTheme!.itemHeight,
@@ -283,12 +315,7 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
       child: AutoSizeText(
         DateTimeFormatter.formatDateTime(value, format, widget.locale, weekday),
         maxLines: 1,
-        // style: TextStyle(
-        //     color: widget.pickerTheme!.itemTextStyle.color,
-        //     fontSize: fontSize ?? widget.pickerTheme!.itemTextStyle.fontSize
-        // ),
-        style: widget.pickerTheme?.itemTextStyle ??
-            DATETIME_PICKER_ITEM_TEXT_STYLE,
+        style: textStyle,
       ),
     );
   }
